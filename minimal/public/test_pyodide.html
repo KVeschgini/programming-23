@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+</head>
+<body>
+  <script>
+    async function main() {
+      let pyodide = await loadPyodide();
+      window.requestInput = async (promptMsg) => {
+        console.log("Prompt:", promptMsg);
+        return new Promise(resolve => setTimeout(() => resolve("TestUser"), 1000));
+      };
+      pyodide.runPython(`
+import builtins, js, ast
+
+async def _input(prompt=""):
+    res = await js.requestInput(prompt)
+    return res
+
+builtins.input = _input
+
+class AsyncInputTransformer(ast.NodeTransformer):
+    def generic_visit(self, node):
+        super().generic_visit(node)
+        if isinstance(node, ast.Call) and getattr(node.func, "id", None) == 'input':
+            return ast.copy_location(ast.Await(value=node), node)
+        return node
+
+def transform_code(code):
+    tree = ast.parse(code)
+    tree = AsyncInputTransformer().visit(tree)
+    return ast.unparse(tree)
+      `);
+      
+      let code = `
+name = input("Name: ")
+print("Hello", name)
+      `;
+      pyodide.globals.set("user_code", code);
+      let transformedCode = pyodide.runPython("transform_code(user_code)");
+      console.log("Transformed:", transformedCode);
+      await pyodide.runPythonAsync(transformedCode);
+    }
+    main();
+  </script>
+</body>
+</html>

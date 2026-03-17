@@ -96,6 +96,9 @@
     "uuid": "^9.0.0",
     "visibilityjs": "^2.0.2"
   },
+  "overrides": {
+    "source-map": "0.7.4"
+  },
   "keywords": [
     "gatsby"
   ],
