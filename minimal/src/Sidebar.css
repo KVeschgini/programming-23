@@ -11,9 +11,48 @@
 
 .sidebar-title {
   margin-top: 0;
-  color: #1f2937;
-  font-size: 1.4rem;
+  color: #111827;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.15rem;
+  letter-spacing: -0.02em;
+}
+
+.sidebar-subtitle {
+  color: #4b5563;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 2rem;
+  letter-spacing: 0.01em;
+}
+
+.language-toggle {
+  display: flex;
+  background: #f3f4f6;
+  padding: 3px;
+  border-radius: 8px;
+  margin-bottom: 2.5rem;
+  width: fit-content;
+}
+
+.language-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 12px;
+  font-size: 0.75rem;
   font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.language-btn.active {
+  background: #ffffff;
+  color: #1f2937;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-part {

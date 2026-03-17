@@ -11,7 +11,6 @@ import 'prismjs/components/prism-python'
 import 'prismjs/themes/prism.css'
 
 import './Sidebar.css'
-import creditsText from '../data/credits.md?raw'
 
 hljs.registerLanguage('python', python)
 
@@ -19,7 +18,7 @@ hljs.registerLanguage('python', python)
 // Markdown file imports
 // ─────────────────────────────────────────────────────────────────────────────
 
-const modules = import.meta.glob('../data/part-*/*.md', { query: '?raw', import: 'default' })
+const modules = import.meta.glob('../data/*/*/*.md', { query: '?raw', import: 'default' })
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Content encoding helpers
@@ -44,11 +43,11 @@ const decodeContent = (encoded) => {
 // nesting while still supporting sample-output/data inside descriptions.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const InnerMarkdown = ({ encoded }) => {
+const InnerMarkdown = ({ encoded, language, part }) => {
   const content = decodeContent(encoded)
   if (!content) return null
   return (
-    <Markdown options={{ overrides: { pre: CodeBlock, 'sample-output': SampleOutput, 'sample-data': SampleData } }}>
+    <Markdown options={{ overrides: { pre: CodeBlock, 'sample-output': (p) => <SampleOutput {...p} language={language} />, 'sample-data': (p) => <SampleData {...p} language={language} />, img: (props) => <Img {...props} language={language} part={part} /> } }}>
       {content}
     </Markdown>
   )
@@ -61,7 +60,12 @@ const InnerMarkdown = ({ encoded }) => {
 // here and rendered as plain preformatted text.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SampleOutput = (props) => (
+const UI_STRINGS = {
+  en: { sampleOutput: 'Sample output', sampleData: 'Sample data', programmingExercise: 'Programming exercise:' },
+  de: { sampleOutput: 'Beispielausgabe', sampleData: 'Beispieldaten', programmingExercise: 'Programmierübung:' }
+}
+
+const SampleOutput = ({ language, ...props }) => (
   <span style={{ display: 'block', margin: '1.5rem 0' }}>
     <span style={{
       display: 'block', backgroundColor: '#f8f9fa', border: '1px solid #e9ecef',
@@ -69,7 +73,7 @@ const SampleOutput = (props) => (
       fontFamily: 'Roboto Slab, sans-serif', fontSize: '0.9rem',
       color: '#6c757d', borderTopLeftRadius: '4px', borderTopRightRadius: '4px', fontWeight: 'bold'
     }}>
-      Sample output
+      {UI_STRINGS[language]?.sampleOutput ?? UI_STRINGS.en.sampleOutput}
     </span>
     <span style={{
       display: 'block', padding: '1rem', backgroundColor: '#ffffff', color: '#212529',
@@ -82,7 +86,7 @@ const SampleOutput = (props) => (
   </span>
 )
 
-const SampleData = (props) => (
+const SampleData = ({ language, ...props }) => (
   <span style={{ display: 'block', margin: '1.5rem 0' }}>
     <span style={{
       display: 'block', backgroundColor: '#e6f7ff', border: '1px solid #91d5ff',
@@ -90,7 +94,7 @@ const SampleData = (props) => (
       fontFamily: 'Roboto Slab, sans-serif', fontSize: '0.9rem',
       color: '#096dd9', borderTopLeftRadius: '4px', borderTopRightRadius: '4px', fontWeight: 'bold'
     }}>
-      Sample data
+      {UI_STRINGS[language]?.sampleData ?? UI_STRINGS.en.sampleData}
     </span>
     <span style={{
       display: 'block', padding: '1rem', backgroundColor: '#ffffff', color: '#212529',
@@ -114,7 +118,7 @@ const TEXT_BOX_VARIANTS = {
 const TEXT_BOX_DEFAULT  = { bg: '#f5f5f5', border: '#d9d9d9', title: '#595959' }
 
 const TextBox = (props) => {
-  const { bg, border, title } = TEXT_BOX_VARIANTS[props.variant] ?? TEXT_BOX_DEFAULT
+  const { bg, border, title, language } = TEXT_BOX_VARIANTS[props.variant] ?? TEXT_BOX_DEFAULT
   return (
     <span style={{
       display: 'block', padding: '1.5rem', margin: '2rem 0',
@@ -126,7 +130,7 @@ const TextBox = (props) => {
           {props.name}
         </strong>
       )}
-      <InnerMarkdown encoded={props['data-content']} />
+      <InnerMarkdown encoded={props['data-content']} language={props.language} />
     </span>
   )
 }
@@ -137,7 +141,7 @@ const TextBox = (props) => {
 
 const Notice = (props) => (
   <span style={{ display: 'block', padding: '1rem', margin: '1rem 0', backgroundColor: '#fffbe6', borderLeft: '4px solid #faad14' }}>
-    <InnerMarkdown encoded={props['data-content']} />
+    <InnerMarkdown encoded={props['data-content']} language={props.language} />
   </span>
 )
 
@@ -148,7 +152,7 @@ const Notice = (props) => (
 let pyodideInstance = null // module-level cache so it loads only once
 
 const InBrowserProgrammingExercise = (props) => {
-  const { name } = props
+  const { name, language } = props
   const [code, setCode]         = useState('# Write your Python code here')
   const [output, setOutput]     = useState('')
   const [testResults, setTestResults] = useState(null)
@@ -272,8 +276,22 @@ def transform_code(code):
       if (tmcname) {
         const exerciseName = tmcname.split('_').slice(1).join('_')
         try {
-          const resp = await fetch(`/tests/${tmcname}/test_${exerciseName}.py`)
-          if (resp.ok) fetchedTestSource = await resp.text()
+          // Try language specific test first, then fallback to default
+          const testPaths = [
+            `/tests/${tmcname}/${language}/test_${exerciseName}.py`,
+            `/tests/${tmcname}/test_${exerciseName}.py`
+          ]
+          for (const testPath of testPaths) {
+            const resp = await fetch(testPath)
+            if (resp.ok) {
+              const text = await resp.text()
+              // Reject HTML (e.g. SPA fallback) — avoid SyntaxError when exec'ing as Python
+              if (!text.trimStart().startsWith('<')) {
+                fetchedTestSource = text
+                break
+              }
+            }
+          }
         } catch (_) { /* ignore fetch errors, fall through to fallback */ }
       }
 
@@ -386,21 +404,17 @@ js.window.current_test_results = json.dumps([{"name": "no_tests", "status": "err
 
   return (
     <span style={{ display: 'block', border: '1px solid #e9ecef', borderRadius: '8px', margin: '2rem 0', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-      <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#c92a2a', padding: '1rem 1.5rem', color: 'white' }}>
+      <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1976d2', padding: '1rem 1.5rem', color: 'white' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '1rem' }}><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           <div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Programming exercise:</div>
+            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>{UI_STRINGS[language]?.programmingExercise ?? UI_STRINGS.en.programmingExercise}</div>
             <strong style={{ display: 'block', fontSize: '1.5rem', fontWeight: 'bold' }}>{name}</strong>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Points:</div>
-          <div style={{ fontSize: '1.5rem' }}>0/1</div>
-        </div>
       </span>
       <span style={{ display: 'block', padding: '1.5rem' }}>
-        <InnerMarkdown encoded={props['data-content']} />
+        <InnerMarkdown encoded={props['data-content']} language={language} />
         <span style={{ display: 'block', marginTop: '1.5rem' }}>
           <strong style={{ display: 'block', marginBottom: '0.5rem', color: '#495057' }}>Code Editor</strong>
           <div className="custom-code-editor" style={{ border: '1px solid #ced4da', borderRadius: '4px', backgroundColor: '#f8f9fa', overflow: 'auto', minHeight: '200px', fontSize: '0.9rem', lineHeight: '1.6' }}>
@@ -424,7 +438,7 @@ js.window.current_test_results = json.dumps([{"name": "no_tests", "status": "err
             <button
               onClick={runTests}
               disabled={isRunning}
-              style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1rem', background: isRunning ? '#e9ecef' : '#f8f9fa', color: '#e67e22', border: '1px solid #ced4da', borderRadius: '4px', cursor: isRunning ? 'not-allowed' : 'pointer', fontSize: '0.9rem', fontWeight: 'bold', textTransform: 'uppercase' }}
+              style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1rem', background: isRunning ? '#e9ecef' : '#f8f9fa', color: '#212529', border: '1px solid #ced4da', borderRadius: '4px', cursor: isRunning ? 'not-allowed' : 'pointer', fontSize: '0.9rem', fontWeight: 'bold', textTransform: 'uppercase' }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               Test
@@ -513,7 +527,7 @@ const ProgrammingExercise = (props) => (
       {props.tmcname && <span style={{ fontSize: '0.85rem', color: '#6c757d' }}>ID: {props.tmcname}</span>}
     </span>
     <span style={{ display: 'block', padding: '1.5rem' }}>
-      <InnerMarkdown encoded={props['data-content']} />
+      <InnerMarkdown encoded={props['data-content']} language={props.language} />
       <span style={{ display: 'block', marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', border: '1px dashed #ced4da', borderRadius: '4px', textAlign: 'center', color: '#6c757d' }}>
         <em>Complete this exercise locally and submit via TMC.</em>
       </span>
@@ -538,11 +552,54 @@ const CodeStatesVisualizer = () => (
   </span>
 )
 
-const Img = ({ src }) => (
-  <span style={{ display: 'block', padding: '1rem', border: '1px dashed #ccc', textAlign: 'center', color: '#999', margin: '1rem 0' }}>
-    [Image: {src}]
-  </span>
-)
+const Img = ({ src, language }) => {
+  // If the src is just a filename, try to find it in the current language directory
+  // or the English directory as a fallback.
+  const [resolvedSrc, setResolvedSrc] = useState(src)
+
+  useEffect(() => {
+    if (src && !src.startsWith('http') && !src.startsWith('/')) {
+      const checkImage = async () => {
+        // Try language specific path
+        const langPath = `/data/${language}/part-${window.currentPart}/${src}`
+        const resp = await fetch(langPath, { method: 'HEAD' })
+        if (resp.ok) {
+          setResolvedSrc(langPath)
+          return
+        }
+        
+        // Fallback to English path
+        const enPath = `/data/en/part-${window.currentPart}/${src}`
+        const enResp = await fetch(enPath, { method: 'HEAD' })
+        if (enResp.ok) {
+          setResolvedSrc(enPath)
+          return
+        }
+
+        // Fallback to absolute data path if needed
+        setResolvedSrc(`/data/en/part-${window.currentPart}/${src}`)
+      }
+      checkImage()
+    } else {
+      setResolvedSrc(src)
+    }
+  }, [src, language])
+
+  return (
+    <span style={{ display: 'block', padding: '1rem', textAlign: 'center', margin: '1rem 0' }}>
+      <img 
+        src={resolvedSrc} 
+        alt="" 
+        style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+        onError={(e) => {
+          e.target.style.display = 'none'
+          e.target.parentNode.style.border = '1px dashed #ccc'
+          e.target.parentNode.innerHTML = `[Image not found: ${src}]`
+        }}
+      />
+    </span>
+  )
+}
 
 const PagesInThisSection    = () => null
 const ExercisesInThisSection = () => null
@@ -580,20 +637,20 @@ const CodeBlock = ({ children }) => {
 // Top-level override map passed to the root <Markdown> renderer
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MARKDOWN_OVERRIDES = {
+const MARKDOWN_OVERRIDES = (language) => ({
   pre:                             CodeBlock,
-  img:                             Img,
-  'text-box':                      TextBox,
-  'sample-output':                 SampleOutput,
-  'sample-data':                   SampleData,
-  notice:                          Notice,
-  'in-browser-programming-exercise': InBrowserProgrammingExercise,
-  'programming-exercise':          ProgrammingExercise,
+  img:                             (props) => <Img {...props} language={language} />,
+  'text-box':                      (props) => <TextBox {...props} language={language} />,
+  'sample-output':                 (props) => <SampleOutput {...props} language={language} />,
+  'sample-data':                   (props) => <SampleData {...props} language={language} />,
+  notice:                          (props) => <Notice {...props} language={language} />,
+  'in-browser-programming-exercise': (props) => <InBrowserProgrammingExercise {...props} language={language} />,
+  'programming-exercise':          (props) => <ProgrammingExercise {...props} language={language} />,
   quiz:                            Quiz,
   'code-states-visualizer':        CodeStatesVisualizer,
   'pages-in-this-section':         PagesInThisSection,
   'exercises-in-this-section':     ExercisesInThisSection,
-}
+})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Markdown preprocessor
@@ -635,14 +692,43 @@ function preprocessMarkdown(raw) {
 // Sidebar
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Sidebar = ({ pages, currentPath, onSelect, isOpen, setIsOpen }) => {
+const Sidebar = ({ pages, currentPath, onSelect, isOpen, setIsOpen, language, setLanguage }) => {
   const parts = [...new Set(pages.map(p => p.part))]
+  const t = {
+    en: {
+      title: 'Computer Science 1',
+      info: 'Information',
+      credits: 'Credits & License'
+    },
+    de: {
+      title: 'Informatik 1',
+      info: 'Informationen',
+      credits: 'Danksagung & Lizenz'
+    }
+  }[language]
+
   return (
     <>
       <div className={`overlay ${isOpen ? 'open' : ''}`} onClick={() => setIsOpen(false)}></div>
       <div className={`sidebar ${isOpen ? 'open' : ''}`}>
-        <h2 className="sidebar-title" style={{ marginBottom: '0.5rem' }}>Informatik 1</h2>
-        <div style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '2rem' }}>Prof. Dr. Veschgini</div>
+        <h2 className="sidebar-title">{t.title}</h2>
+        <div className="sidebar-subtitle">Prof. Dr. Kambis Veschgini</div>
+        
+        <div className="language-toggle">
+          <button 
+            className={`language-btn ${language === 'en' ? 'active' : ''}`}
+            onClick={() => setLanguage('en')}
+          >
+            EN
+          </button>
+          <button 
+            className={`language-btn ${language === 'de' ? 'active' : ''}`}
+            onClick={() => setLanguage('de')}
+          >
+            DE
+          </button>
+        </div>
+
         {parts.map(part => (
           <div key={part} className="sidebar-part">
             <h4 className="sidebar-part-title">
@@ -655,30 +741,30 @@ const Sidebar = ({ pages, currentPath, onSelect, isOpen, setIsOpen }) => {
                   <li
                     key={page.path}
                     onClick={() => {
-                      onSelect(page)
-                      setIsOpen(false)
-                    }}
-                    className={`sidebar-item ${active ? 'active' : ''}`}
-                  >
-                    {page.name.replace(/^\d+-/, '').replace(/-/g, ' ')}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ))}
+                    onSelect(page)
+                    setIsOpen(false)
+                  }}
+                  className={`sidebar-item ${active ? 'active' : ''}`}
+                >
+                  {page.title || page.name.replace(/^\d+-/, '').replace(/-/g, ' ')}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      ))}
 
         <div className="sidebar-part" style={{ marginTop: '2rem' }}>
-          <h4 className="sidebar-part-title">Information</h4>
+          <h4 className="sidebar-part-title">{t.info}</h4>
           <ul className="sidebar-timeline">
             <li
               onClick={() => {
-                onSelect({ path: 'credits', name: 'Credits & License', isStatic: true })
+                onSelect({ path: 'credits', name: t.credits, isStatic: true })
                 setIsOpen(false)
               }}
               className={`sidebar-item ${currentPath === 'credits' ? 'active' : ''}`}
             >
-              Credits & License
+              {t.credits}
             </li>
           </ul>
         </div>
@@ -711,11 +797,15 @@ function App() {
     lastScrollY.current = currentScrollY
   }
 
+  const [language, setLanguage] = useState('en')
+
   const loadPage = async (page) => {
     setCurrentPath(page.path)
+    window.currentPart = page.part
     try {
       if (page.isStatic && page.path === 'credits') {
-        setContent(preprocessMarkdown(creditsText))
+        const creditsRaw = await import(`../data/${language}/credits.md?raw`).then(m => m.default)
+        setContent(preprocessMarkdown(creditsRaw))
         if (mainContentRef.current) {
           mainContentRef.current.scrollTop = 0
         }
@@ -735,15 +825,45 @@ function App() {
   useEffect(() => {
     const sorted = Object.keys(modules)
       .map(path => {
-        const m = path.match(/part-(\d+)\/(.+)\.md$/)
-        return m ? { path, part: parseInt(m[1], 10), name: m[2] } : null
+        const m = path.match(/\.\.\/data\/([^/]+)\/part-(\d+)\/(.+)\.md$/)
+        if (!m) return null
+        
+        const lang = m[1]
+        const part = parseInt(m[2], 10)
+        const fileName = m[3]
+        
+        // Try to find title from the module content if possible, 
+        // but since modules[path] is a function that returns a promise,
+        // we'll rely on a naming convention or a pre-calculated map if we had one.
+        // For now, we'll just use the filename as a fallback and fix the underscore issue.
+        return { path, lang, part, name: fileName }
       })
       .filter(Boolean)
+      .filter(p => p.lang === language)
       .sort((a, b) => a.part !== b.part ? a.part - b.part : a.name.localeCompare(b.name, undefined, { numeric: true }))
-    // eslint-disable-next-line
-    setPages(sorted)
-    if (sorted.length > 0) loadPage(sorted[0])
-  }, [])
+
+    // To get the actual titles from the markdown frontmatter, we need to load them.
+    // Since we want the sidebar to be correct immediately, we can do a quick pass.
+    const loadTitles = async () => {
+      const withTitles = await Promise.all(sorted.map(async (p) => {
+        try {
+          const raw = await modules[p.path]()
+          const titleMatch = raw.match(/^title:\s*['"](.*)['"]/m)
+          return { ...p, title: titleMatch ? titleMatch[1] : p.name }
+        } catch (err) {
+          return { ...p, title: p.name }
+        }
+      }))
+      setPages(withTitles)
+      
+      if (withTitles.length > 0) {
+        const current = withTitles.find(p => p.name === currentPage?.name && p.part === currentPage?.part) || withTitles[0]
+        loadPage(current)
+      }
+    }
+
+    loadTitles()
+  }, [language])
 
   const currentIndex = pages.findIndex(p => p.path === currentPath)
   const currentPage = currentIndex >= 0 ? pages[currentIndex] : null
@@ -766,9 +886,9 @@ function App() {
           )}
         </div>
         <div className="navbar-title">
-          {currentPage ? formatTitle(currentPage.name) : 'Loading...'}
+          {currentPage ? (currentPage.title || formatTitle(currentPage.name)) : 'Loading...'}
         </div>
-        <div className="navbar-right">
+        <div className="navbar-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle menu">
             {sidebarOpen ? (
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -787,11 +907,19 @@ function App() {
       </header>
 
       <div className="main-body" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <Sidebar pages={pages} currentPath={currentPath} onSelect={loadPage} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+        <Sidebar 
+          pages={pages} 
+          currentPath={currentPath} 
+          onSelect={loadPage} 
+          isOpen={sidebarOpen} 
+          setIsOpen={setSidebarOpen}
+          language={language}
+          setLanguage={setLanguage}
+        />
         <div ref={mainContentRef} onScroll={handleScroll} className="main-content" style={{ flex: 1, overflowY: 'auto', padding: '3rem 2rem', backgroundColor: '#ffffff', borderTopLeftRadius: '16px', boxShadow: '-4px 0 15px rgba(0,0,0,0.02)' }}>
           <div style={{ maxWidth: '850px', margin: '0 auto' }}>
             {content
-              ? <Markdown options={{ overrides: MARKDOWN_OVERRIDES }}>{content}</Markdown>
+              ? <Markdown options={{ overrides: MARKDOWN_OVERRIDES(language) }}>{content}</Markdown>
               : <div style={{ textAlign: 'center', color: '#6c757d', marginTop: '5rem' }}><h2>Loading…</h2></div>
             }
             
@@ -803,12 +931,12 @@ function App() {
                       <line x1="19" y1="12" x2="5" y2="12"></line>
                       <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
-                    Prev: {formatTitle(prevPage.name)}
+                    Prev: {prevPage.title || formatTitle(prevPage.name)}
                   </button>
                 )}
                 {nextPage && (
                   <button className="next-btn" onClick={() => loadPage(nextPage)}>
-                    Next: {formatTitle(nextPage.name)}
+                    Next: {nextPage.title || formatTitle(nextPage.name)}
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft: '8px'}}>
                       <line x1="5" y1="12" x2="19" y2="12"></line>
                       <polyline points="12 5 19 12 12 19"></polyline>
