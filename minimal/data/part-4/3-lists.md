@@ -687,7 +687,4 @@ The range of the list is 4
 There are many more ways to use lists in Python. The Python [documentation](https://docs.python.org/3/tutorial/datastructures.html) is a good place to start if you want to know more.
 
 <!---
-A quiz to review the contents of this section:
 
-<quiz id="4849cd69-1938-5f4f-8805-8445f0f5c015"></quiz>
--->

@@ -698,7 +698,4 @@ This tells the user of the function that the function is supposed to return a st
 **NB:** Type hinting is literally just hinting about the type of the argument or the return value. It is not a guarantee of type, and definitely not a safeguard against type errors. If a function receives an argument or returns a value of the wrong type, the function is still executed, but it might not work correctly.
 
 <!---
-A quiz to review the contents of this section:
 
-<quiz id="fb289a3b-288a-5a9f-b3d2-07ceae5866ea"></quiz>
--->

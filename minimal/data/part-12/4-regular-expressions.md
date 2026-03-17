@@ -490,6 +490,4 @@ command: **0**
 
 </programming-exercise>
 
-Please respond to a quick questionnaire on this part of the course.
 
-<quiz id="8bb54f0a-5009-5a69-a936-3c9eebc33645"></quiz>

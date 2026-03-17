@@ -303,6 +303,4 @@ Average minutes: 156.0
 
 </programming-exercise>
 
-<!---
-<quiz id="6fff0633-2f18-5e2b-9eab-6c8950c8378b"></quiz>
--->
+

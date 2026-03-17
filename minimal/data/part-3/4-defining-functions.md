@@ -470,12 +470,6 @@ uayba
 
 </in-browser-programming-exercise>
 
-<!---
-A quiz to review the contents of this section:
 
-<quiz id="b04f1d8b-d207-5a8c-abbd-e42a3af7c12d"></quiz>
--->
 
-Please respond to a quick questionnaire on this week's materials.
 
-<quiz id="d2e3d2ab-dda9-50b8-89e9-7bd96cc03aea"></quiz>

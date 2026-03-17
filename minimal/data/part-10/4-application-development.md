@@ -837,7 +837,5 @@ As you have seen before, using techniques like this carries a price tag, as ther
 
 The technique outlined above is called _dependency injection_. As the name implies, the idea is to provide any dependency required by an object from _outside_ the object. It is a very useful tool in a programmer's toolbox, as it makes it easier to implement new features in programs and facilitates automatic testing. This theme will be further explored on the aforementioned courses [Software Development Methods](https://studies.helsinki.fi/courses/cu/hy-CU-118024742-2020-08-01) and [Software Engineering](https://studies.helsinki.fi/courses/cu/hy-CU-118024909-2020-08-01).
 
-Please respond to a quick questionnaire on this part of the course.
 
-<quiz id="8529af06-c528-5044-93e4-23f05a1cd8ce"></quiz>
 

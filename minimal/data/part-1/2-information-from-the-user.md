@@ -243,11 +243,3 @@ The story should change according to the input given by the user.
 
 
 </in-browser-programming-exercise>
-
-<!--
-
-A quiz to review the contents of this section:
-
-<quiz id="10cb3510-d8a6-5e9b-b372-c85c4c7eb957"></quiz>
-
--->

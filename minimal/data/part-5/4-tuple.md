@@ -402,13 +402,7 @@ DDDDDDD
 
 </programming-exercise>
 
-<!---
-A quiz to review the contents of this section:
-
-<quiz id="69694e01-4c47-5b9d-8a00-b0d96a477dc7"></quiz>
--->
 
 
-Please respond to a quick questionnaire on this week's materials.
 
-<quiz id="3f780cc8-618c-5000-928c-43ac92b3894a"></quiz>
+

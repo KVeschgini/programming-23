@@ -169,7 +169,4 @@ print(new_list)
 </programming-exercise>
 
 <!---
-A quiz to review the contents of this section:
 
-<quiz id="90d650f3-fde1-5132-ade9-73f3b4bf6189"></quiz>
--->

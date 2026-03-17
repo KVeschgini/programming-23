@@ -427,10 +427,4 @@ Hint: the integer division operator `//` could come in handy here.
 
 </in-browser-programming-exercise>
 
-<!--
-
-A quiz to review the contents of this section:
-
-<quiz id="d781d54e-9792-5a79-a018-168940390580"></quiz>
-
--->
+</in-browser-programming-exercise>

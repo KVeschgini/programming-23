@@ -973,7 +973,4 @@ Laivasillankatu Hietalahdentori 1.478708873076181
 </programming-exercise>
 
 <!---
-A quiz to review the contents of this section:
 
-<quiz id="69694e01-4c47-5b9d-8a00-b0d96a477dc7"></quiz>
--->

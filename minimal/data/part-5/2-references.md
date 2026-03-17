@@ -645,7 +645,4 @@ It is generally considered a good programming practice to avoid causing side eff
 Functions free of side effects are also called _pure functions_. Especially when adhering to a functional programming style, this is a common ideal to follow. We will explore this topic further in _Advanced Course in Programming_, which is the course following this one.
 
 <!---
-A quiz to review the contents of this section:
 
-<quiz id="b254a4f9-09bb-55c8-87c0-538f91e51ace"></quiz>
--->

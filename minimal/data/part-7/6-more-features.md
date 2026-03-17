@@ -282,7 +282,5 @@ print(result)
 
 </programming-exercise>
 
-Please respond to the course feedback questionnaire. The questionnaire results help us improve the course.
 
-<quiz id="3cbb136c-266a-5c12-9e9c-dd2aa1c5191e"></quiz>
 

@@ -185,6 +185,4 @@ print(fractionate(5))
 
 </programming-exercise>
 
-<!---
-<quiz id="94c034a1-3183-5682-acb0-7f126d26ba07"></quiz>
--->
+

@@ -387,10 +387,4 @@ Amount of tax: 1950.0 euros
 
 </in-browser-programming-exercise>
 
-<!--
-
-A quiz to review the contents of this section:
-
-<quiz id="6bfd7e0d-2998-5697-80dc-418703fabbbf"></quiz>
-
--->
+</in-browser-programming-exercise>

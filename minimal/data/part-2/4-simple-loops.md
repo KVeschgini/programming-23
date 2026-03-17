@@ -599,14 +599,4 @@ Negative numbers 1
 
 </in-browser-programming-exercise>
 
-<!--
-
-A quiz to review the contents of this section:
-
-<quiz id="63a51999-e525-5f1d-a333-b26392a5585b"></quiz>
-
--->
-
-Please respond to a quick questionnaire on this week's materials.
-
-<quiz id="2cbb7cde-cddf-5720-bb72-e638ef0b7dac"></quiz>
+</in-browser-programming-exercise>

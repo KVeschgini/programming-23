@@ -258,13 +258,3 @@ def main():
 # run the main function
 main()
 ```
-
-<!---
-A quiz to review the contents of this section:
-
-<quiz id="69694e01-4c47-5b9d-8a00-b0d96a477dc7"></quiz>
--->
-
-Please respond to a quick questionnaire on this week's materials.
-
-<quiz id="61f7ef38-a42d-54dc-a0f7-81db019c7693"></quiz>

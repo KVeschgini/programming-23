@@ -673,7 +673,4 @@ print(my_movies)
 At this point in the course, you can choose to participate in a research study related to learning programming. Participation is voluntary and individual participants cannot be identified from the data gathered in the study. You can freely quit the experiment at any point. [Click here to begin the study!](https://runestone.academy/ns/books/published/p3pt/index.html)
 
 <!---
-A quiz to review the contents of this section:
 
-<quiz id="6361eeca-a2e2-5577-892c-749706d754f0"></quiz>
--->

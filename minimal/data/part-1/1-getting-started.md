@@ -193,9 +193,7 @@ Thus far, you have probably used double quotation marks `"` to print out strings
 This comes in handy if you ever want to print out the actual quotation marks themselves:
 
 ```python
-
 print('"Come right back!", shouted the police officer.')
-
 ```
 
 <sample-output>
@@ -217,10 +215,4 @@ print("Hello there!")
 </in-browser-programming-exercise>
 
 
-<!--
-
-A quiz to review the contents of this section:
-
-<quiz id="f1d6d205-dfd6-5c6f-b148-b332dfd64289"></quiz>
-
--->
+</in-browser-programming-exercise>

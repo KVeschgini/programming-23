@@ -48,7 +48,7 @@ const InnerMarkdown = ({ encoded }) => {
   const content = decodeContent(encoded)
   if (!content) return null
   return (
-    <Markdown options={{ overrides: { 'sample-output': SampleOutput, 'sample-data': SampleData } }}>
+    <Markdown options={{ overrides: { pre: CodeBlock, 'sample-output': SampleOutput, 'sample-data': SampleData } }}>
       {content}
     </Markdown>
   )
@@ -263,21 +263,76 @@ def transform_code(code):
       setOutput('')
       pyodideInstance.setStdout({ batched: (m) => setOutput((p) => p + m + '\n') })
       pyodideInstance.setStderr({ batched: (m) => setOutput((p) => p + m + '\n') })
-      
-      window.current_editor_id = editorId
-      
-      // We don't have actual tests from TMC in the minimal version,
-      // so we will just run a simple unittest mock or check if testCode is provided.
-      const testCode = props.testCode || `
-import unittest
-import json
-import sys
 
-class JSONTestResult(unittest.TestResult):
+      window.current_editor_id = editorId
+
+      // Derive test file path from tmcname (e.g. "part01-01_emoticon" → "/tests/part01-01_emoticon/test_emoticon.py")
+      let fetchedTestSource = null
+      const tmcname = props.tmcname
+      if (tmcname) {
+        const exerciseName = tmcname.split('_').slice(1).join('_')
+        try {
+          const resp = await fetch(`/tests/${tmcname}/test_${exerciseName}.py`)
+          if (resp.ok) fetchedTestSource = await resp.text()
+        } catch (_) { /* ignore fetch errors, fall through to fallback */ }
+      }
+
+      if (fetchedTestSource) {
+        // Pass strings via globals to avoid any escaping issues inside Python string literals
+        pyodideInstance.globals.set('_user_code_str', code)
+        pyodideInstance.globals.set('_test_source', fetchedTestSource)
+
+        await pyodideInstance.runPythonAsync(`
+import sys, io, types, unittest, json, builtins
+
+_captured_stdout = ""
+
+def _run_user_code_sync():
+    global _captured_stdout
+    _orig = builtins.input
+    builtins.input = lambda prompt="": "test_input"
+    buf = io.StringIO()
+    old = sys.stdout
+    sys.stdout = buf
+    try:
+        exec(compile(_user_code_str, '<exercise>', 'exec'), {})
+    except Exception:
+        pass
+    finally:
+        sys.stdout = old
+        builtins.input = _orig
+    _captured_stdout = buf.getvalue().rstrip()
+
+_run_user_code_sync()
+
+def _get_stdout():
+    return _captured_stdout
+
+def _load_module(name, lang='en'):
+    return object()
+
+def _reload_module(module):
+    _run_user_code_sync()
+
+def _points(*args, **kwargs):
+    def decorator(cls):
+        return cls
+    return decorator
+
+_tmc = types.ModuleType('tmc')
+_tmc.points = _points
+sys.modules['tmc'] = _tmc
+
+_tmc_utils = types.ModuleType('tmc.utils')
+_tmc_utils.load_module = _load_module
+_tmc_utils.reload_module = _reload_module
+_tmc_utils.get_stdout = _get_stdout
+sys.modules['tmc.utils'] = _tmc_utils
+
+class _JSONTestResult(unittest.TestResult):
     def __init__(self, stream, descriptions, verbosity):
         super().__init__(stream, descriptions, verbosity)
         self.results = []
-        
     def _get_message(self, err):
         exc_type, exc_value, tb = err
         if isinstance(exc_value, AssertionError):
@@ -286,57 +341,42 @@ class JSONTestResult(unittest.TestResult):
                 return msg.split(" : ", 1)[1]
             return msg
         return str(exc_value)
-
     def addSuccess(self, test):
         super().addSuccess(test)
         self.results.append({"name": test._testMethodName, "status": "passed", "message": ""})
-        
     def addFailure(self, test, err):
         super().addFailure(test, err)
         self.results.append({"name": test._testMethodName, "status": "failed", "message": self._get_message(err)})
-        
     def addError(self, test, err):
         super().addError(test, err)
         self.results.append({"name": test._testMethodName, "status": "error", "message": self._get_message(err)})
 
-class TestUserCode(unittest.TestCase):
-    def test_print_emoticon(self):
-        self.assertTrue(False, "Make sure that you don't print out extra characters before the emoticon starts.")
+_test_ns = {}
+exec(compile(_test_source, '<test>', 'exec'), _test_ns)
 
-# Run tests and capture output
-suite = unittest.TestLoader().loadTestsFromTestCase(TestUserCode)
-result = JSONTestResult(sys.stdout, True, 1)
-suite.run(result)
+_suite = unittest.TestSuite()
+for _v in _test_ns.values():
+    if isinstance(_v, type) and issubclass(_v, unittest.TestCase) and _v is not unittest.TestCase:
+        _suite.addTests(unittest.TestLoader().loadTestsFromTestCase(_v))
+
+_result = _JSONTestResult(sys.stdout, True, 1)
+_suite.run(_result)
 
 import js
-js.window.current_test_results = json.dumps(result.results)
-`
-      // Run user code first to populate globals (without input blocking)
-      // For tests, we should mock input to prevent blocking
-      pyodideInstance.runPython(`
-import builtins
-_original_input = builtins.input
-async def _mock_input(prompt=""):
-    return "test_input"
-builtins.input = _mock_input
-      `)
-      
-      pyodideInstance.globals.set("user_code", code)
-      const transformedCode = pyodideInstance.runPython("transform_code(user_code)")
-      await pyodideInstance.runPythonAsync(transformedCode)
+js.window.current_test_results = json.dumps(_result.results)
+`)
+      } else {
+        // No test file found for this exercise
+        await pyodideInstance.runPythonAsync(`
+import js, json
+js.window.current_test_results = json.dumps([{"name": "no_tests", "status": "error", "message": "No automated tests are available for this exercise."}])
+`)
+      }
 
-      // Run tests
-      await pyodideInstance.runPythonAsync(testCode)
-      
       const resultsStr = window.current_test_results
       if (resultsStr) {
         setTestResults(JSON.parse(resultsStr))
       }
-      
-      // Restore input
-      pyodideInstance.runPython(`
-builtins.input = _original_input
-      `)
     } catch (err) {
       setOutput((p) => p + '\nTest Failure:\n' + err.message)
     } finally {
@@ -401,10 +441,7 @@ builtins.input = _original_input
             <div style={{ marginTop: '1.5rem', border: '1px solid #e9ecef', borderRadius: '4px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#e9ecef', padding: '0.75rem 1rem', borderBottom: '1px solid #ced4da' }}>
                 <strong style={{ color: '#495057', fontSize: '1.1rem' }}>Test Results</strong>
-                <div>
-                  <button style={{ background: '#1976d2', color: 'white', border: 'none', padding: '0.35rem 0.75rem', borderRadius: '4px', marginRight: '0.5rem', fontSize: '0.85rem', cursor: 'pointer' }}>Need help?</button>
-                  <button onClick={() => setTestResults(null)} style={{ background: '#d6d8db', color: '#495057', border: 'none', padding: '0.35rem 0.75rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}>Close</button>
-                </div>
+                <button onClick={() => setTestResults(null)} style={{ background: '#d6d8db', color: '#495057', border: 'none', padding: '0.35rem 0.75rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}>Close</button>
               </div>
               <div style={{ padding: '1rem', backgroundColor: '#fff' }}>
                 {testResults.map((tr, i) => (
@@ -420,17 +457,13 @@ builtins.input = _original_input
                   </div>
                 ))}
               </div>
-              <div style={{ backgroundColor: '#f8f9fa', padding: '0.75rem 1rem', borderTop: '1px solid #e9ecef', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <label style={{ fontSize: '0.85rem', color: '#6c757d', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" style={{ marginRight: '0.5rem' }} /> Show all
-                </label>
-                <div style={{ flex: 1, margin: '0 2rem', height: '16px', backgroundColor: '#e9ecef', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+              <div style={{ backgroundColor: '#f8f9fa', padding: '0.75rem 1rem', borderTop: '1px solid #e9ecef' }}>
+                <div style={{ height: '16px', backgroundColor: '#e9ecef', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
                   <div style={{ height: '100%', backgroundColor: testResults.every(tr => tr.status === 'passed') ? '#28a745' : '#90caf9', width: `${Math.round((testResults.filter(tr => tr.status === 'passed').length / testResults.length) * 100)}%`, transition: 'width 0.3s ease' }}></div>
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#495057', fontWeight: 'bold' }}>
                     {Math.round((testResults.filter(tr => tr.status === 'passed').length / testResults.length) * 100)} %
                   </div>
                 </div>
-                <button style={{ background: '#1976d2', color: 'white', border: 'none', padding: '0.35rem 1rem', borderRadius: '4px', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>Submit</button>
               </div>
             </div>
           )}

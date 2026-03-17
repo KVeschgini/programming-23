@@ -339,6 +339,4 @@ carbon
 
 </programming-exercise>
 
-<!---
-<quiz id="d53a6898-f390-55ef-b266-95694bcbe704"></quiz>
--->
+

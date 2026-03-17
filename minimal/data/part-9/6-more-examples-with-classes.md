@@ -532,7 +532,5 @@ Brick (4 kg)
 
 </programming-exercise>
 
-Please respond to a quick questionnaire on this week's materials.
 
-<quiz id="9af98a66-2863-5c6f-be17-a1f1d92a2cb4"></quiz>
 

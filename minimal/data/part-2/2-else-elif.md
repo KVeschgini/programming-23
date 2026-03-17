@@ -305,10 +305,4 @@ You gave the same word twice.
 
 </in-browser-programming-exercise>
 
-<!--
-
-A quiz to review the contents of this section:
-
-<quiz id="82f644fe-5d89-5153-842a-11d5d11bc059"></quiz>
-
--->
+</in-browser-programming-exercise>

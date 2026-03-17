@@ -513,7 +513,4 @@ You may assume the number typed in by the user is always equal to 2 or higher.
 </in-browser-programming-exercise>
 
 <!---
-A quiz to review the contents of this section:
 
-<quiz id="900c0293-b14c-5736-b1a3-68d4fa01ac43"></quiz>
--->

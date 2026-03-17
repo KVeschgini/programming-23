@@ -552,7 +552,5 @@ The code above and the automatic tests for this exercise assume your class conta
 
 </programming-exercise>
 
-Please respond to a quick questionnaire on this week's materials.
 
-<quiz id="c508efcb-4628-5f1d-87d1-db91dca171af"></quiz>
 

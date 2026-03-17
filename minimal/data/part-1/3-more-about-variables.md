@@ -14,10 +14,6 @@ After this section
 
 </text-box>
 
-Please fill in this questionnaire before getting started with this section. You will get one exercise point for answering.
-
-<quiz id="1d1c07e8-4832-58f2-b8ac-357ed2d130c8"></quiz>
-
 
 
 Variables are needed for various purposes in programming. You can use variables to store any information that will be needed later in the program's execution.
@@ -446,11 +442,3 @@ print(5 + 8 - 4)
 ```
 
 </in-browser-programming-exercise>
-
-<!--
-
-A quiz to review the contents of this section:
-
-<quiz id="49bf296e-41d1-5982-89a9-c784b630eaee"></quiz>
-
--->

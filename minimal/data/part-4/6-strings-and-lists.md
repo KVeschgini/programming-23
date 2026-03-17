@@ -585,12 +585,6 @@ Ongelmaan pyritään saamaan parempi ratkaisu lähipäivinä. -->
 
 </programming-exercise>
 
-<!---
-A quiz to review the contents of this section:
 
-<quiz id="925f1715-d762-5e44-a812-be13bff1aa44"></quiz>
--->
 
-Please respond to a quick questionnaire on this week's materials.
 
-<quiz id="9d17d1bc-4920-5d47-8f21-0dfaf6983147"></quiz>

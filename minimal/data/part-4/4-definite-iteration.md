@@ -497,7 +497,4 @@ print(result) # ['dorothy', 'richard']
 </programming-exercise>
 
 <!---
-A quiz to review the contents of this section:
 
-<quiz id="b1a91143-3137-5833-a771-6801f541a43b"></quiz>
--->

@@ -385,6 +385,4 @@ The suggestions should be determined with the function [get\_close\_matches](htt
 
 </programming-exercise>
 
-<!---
-<quiz id="311e3116-a763-50b5-b79e-056fdccb3394"></quiz>
--->
+

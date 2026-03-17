@@ -778,7 +778,4 @@ The substring does not occur twice in the string.
 </in-browser-programming-exercise>
 
 <!---
-A quiz to review the contents of this section:
 
-<quiz id="6bfa7eab-80de-52e2-afe5-285af914099f"></quiz>
--->

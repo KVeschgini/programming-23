@@ -518,15 +518,3 @@ The roots are 2.0 and -4.0
 </sample-output>
 
 </in-browser-programming-exercise>
-
-<!--
-
-A quiz to review the contents of this section:
-
-<quiz id="bc7e500f-a91e-5709-8ae6-34637ff01737"></quiz>
-
--->
-
-Please respond to a quick questionnaire on this week's materials. The questionnaire is worth one exercise point.
-
-<quiz id="9606c6c1-70f4-5236-bd3e-7208b56e7b9e"></quiz>

@@ -399,7 +399,4 @@ Please type in a number: **6**
 </in-browser-programming-exercise>
 
 <!---
-A quiz to review the contents of this section:
 
-<quiz id="b1118ae8-8dd4-563a-b6a5-0c274136535c"></quiz>
--->
